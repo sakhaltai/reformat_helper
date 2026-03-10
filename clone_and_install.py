@@ -16,21 +16,19 @@ CODE_DIR = os.path.expanduser("~/code")
 
 # (folder_relative_to_CODE_DIR, clone_url, install_command)
 REPOS = [
-    # ── sakhalteam org ──
+    # ── sakhalteam org (cloned into code/sakhalteam/) ──
     ("sakhalteam/bird-bingo",           "https://github.com/sakhalteam/bird-bingo.git",           "npm install"),
     ("sakhalteam/japanese-articles",    "https://github.com/sakhalteam/japanese-articles.git",    "npm install"),
     ("sakhalteam/nikbeat",              "https://github.com/sakhalteam/nikbeat.git",              "npm install"),
     ("sakhalteam/sakhalteam.github.io", "https://github.com/sakhalteam/sakhalteam.github.io.git", "npm install"),
-    ("sakhalteam/adhdo",                "https://github.com/sakhalteam/adhdo.git",                None),
 
-    # ── personal repos ──
-    ("aeroja",                "https://github.com/sakhaltai/aeroja.git",                "yarn install"),
-    ("aether",                "https://github.com/sakhaltai/aether.git",                "yarn install"),
-    ("sakhaltai.github.io",   "https://github.com/sakhaltai/sakhaltai.github.io.git",   "npm install"),
-    ("rodeo2024",             "https://github.com/sakhaltai/rodeo2024.git",             "pip install -r requirements.txt"),
+    # ── personal repos (cloned into code/) ──
     ("adobe-scripts",         "https://github.com/sakhaltai/adobe-scripts.git",         None),
     ("ae_expressions",        "https://github.com/sakhaltai/ae_expressions.git",        None),
+    ("aeroja",                "https://github.com/sakhaltai/aeroja.git",                "yarn install"),
     ("python_tools",          "https://github.com/sakhaltai/python_tools.git",          None),
+    ("reformat_helper",       "https://github.com/sakhaltai/reformat_helper.git",       None),
+    ("sakhaltai.github.io",   "https://github.com/sakhaltai/sakhaltai.github.io.git",   "npm install"),
 ]
 
 

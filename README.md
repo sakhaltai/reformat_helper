@@ -163,14 +163,12 @@ This clones and installs deps for:
 | sakhalteam/japanese-articles | npm | React, Vite, Tailwind, react-markdown |
 | sakhalteam/nikbeat | npm | React, Vite, Tailwind |
 | sakhalteam/sakhalteam.github.io | npm | React, Vite, Three.js |
-| sakhalteam/adhdo | — | (no deps) |
-| aeroja | yarn | React, Vite, Tailwind, Adobe CEP |
-| aether | yarn | React, Vite, Tailwind, shadcn, Adobe CEP |
-| sakhaltai.github.io | npm | React, Vite, Tailwind |
-| rodeo2024 | pip | spacy, selenium, beautifulsoup4 |
 | adobe-scripts | — | (no deps) |
 | ae_expressions | — | (no deps) |
+| aeroja | yarn | React, Vite, Tailwind, Adobe CEP |
 | python_tools | — | (no deps) |
+| reformat_helper | — | (this repo) |
+| sakhaltai.github.io | npm | React, Vite, Tailwind |
 
 If you add new repos later, just edit the `REPOS` list in `clone_and_install.py`.
 
