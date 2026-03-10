@@ -146,28 +146,33 @@ pip install -r D:\backup\python-packages.txt
 Get-Content D:\backup\npm-globals.txt | ForEach-Object { npm install -g $_ }
 ```
 
-### Step 5: Clone your repos
+### Step 5: Clone all repos + install dependencies
+
+One script handles everything — clones all your repos (including sakhalteam org repos into a `sakhalteam/` subfolder) and runs the right install command for each:
 
 ```powershell
-cd C:\Users\sakha\Code
-git clone https://github.com/sakhaltai/aeroja.git
-git clone https://github.com/sakhaltai/aether.git
-git clone https://github.com/sakhaltai/sakhaltai.github.io.git
-git clone https://github.com/sakhaltai/adobe-scripts.git
-git clone https://github.com/sakhaltai/ae_expressions.git
-git clone https://github.com/sakhaltai/python_tools.git
-git clone https://github.com/sakhaltai/rodeo2024.git
-# Check your GitHub profile for any others
+cd C:\Users\sakha\Code\reformat_helper
+python clone_and_install.py
 ```
 
-Then install deps for each:
+This clones and installs deps for:
 
-```powershell
-cd aeroja && yarn install && cd ..
-cd aether && yarn install && cd ..
-cd sakhaltai.github.io && npm install && cd ..
-cd rodeo2024 && pip install -r requirements.txt && cd ..
-```
+| Repo | Manager | Deps |
+|------|---------|------|
+| sakhalteam/bird-bingo | npm | React, Vite, Tailwind |
+| sakhalteam/japanese-articles | npm | React, Vite, Tailwind, react-markdown |
+| sakhalteam/nikbeat | npm | React, Vite, Tailwind |
+| sakhalteam/sakhalteam.github.io | npm | React, Vite, Three.js |
+| sakhalteam/adhdo | — | (no deps) |
+| aeroja | yarn | React, Vite, Tailwind, Adobe CEP |
+| aether | yarn | React, Vite, Tailwind, shadcn, Adobe CEP |
+| sakhaltai.github.io | npm | React, Vite, Tailwind |
+| rodeo2024 | pip | spacy, selenium, beautifulsoup4 |
+| adobe-scripts | — | (no deps) |
+| ae_expressions | — | (no deps) |
+| python_tools | — | (no deps) |
+
+If you add new repos later, just edit the `REPOS` list in `clone_and_install.py`.
 
 ### Step 6: Install desktop apps
 
@@ -208,6 +213,7 @@ yt-dlp --version
 |------|---------|
 | `pre_reformat_audit.py` | Run before reformatting — scans everything and generates a report |
 | `post_reformat_setup.py` | Run after reformatting (as admin) — installs dev toolchain |
+| `clone_and_install.py` | Clones all repos and installs their dependencies |
 | `vscode_extensions.txt` | Snapshot of your VS Code extensions |
 | `gitconfig_template` | Your .gitconfig to restore |
 | `.gitignore` | Keeps audit output out of the repo |
