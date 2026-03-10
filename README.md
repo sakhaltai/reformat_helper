@@ -36,11 +36,10 @@ pip list --not-required > $env:USERPROFILE\Desktop\python-packages-toplevel.txt
 
 ### 3. Back up these folders/files
 
-Copy all of these to a USB drive or cloud folder:
+Copy all of these to a USB drive or cloud folder (e.g. `K:\after reformatting\`):
 
 | What | Where | Why |
 |------|-------|-----|
-| SSH keys | `C:\Users\sakha\.ssh\` | Without these you'd need to generate new keys and re-add them to GitHub |
 | Git config | `C:\Users\sakha\.gitconfig` | User name, email, LFS config, autocrlf |
 | AWS credentials | `C:\Users\sakha\.aws\` | AWS CLI config |
 | Azure credentials | `C:\Users\sakha\.azure\` | Azure CLI config |
@@ -71,20 +70,32 @@ Now you're safe to reformat.
 
 ---
 
+## Reformatting
+
+1. Download **Media Creation Tool** from Microsoft
+2. Plug in a fast USB drive (or external NVMe)
+3. Run Media Creation Tool — it downloads Windows and creates a bootable USB in one step
+4. Restart, mash **F12** (or **Del**) to get to the boot menu
+5. Select the USB drive, let Windows install, reformat your drive
+6. Complete Windows setup
+
+---
+
 ## AFTER Reformatting
 
-### Step 1: Get Python + Git
+### Step 1: Get Python + Git (just these two, manually)
 
-You need these two things manually before the script can take over:
+You need these two things before the script can take over:
 
 1. Download and install **Python** from [python.org](https://www.python.org/downloads/)
-   - Check "Add Python to PATH" during install
+   - **Check "Add Python to PATH"** during install
 2. Download and install **Git** from [git-scm.com](https://git-scm.com/download/win)
    - Or just download this repo as a ZIP from GitHub
 
-### Step 2: Clone and run
+### Step 2: Clone this repo and run the setup script
 
 ```powershell
+mkdir C:\Users\sakha\Code
 cd C:\Users\sakha\Code
 git clone https://github.com/sakhaltai/reformat_helper.git
 cd reformat_helper
@@ -96,59 +107,73 @@ cd reformat_helper
 python post_reformat_setup.py
 ```
 
-Go make coffee. The script handles everything below automatically.
+Go make coffee. The script installs **everything** automatically — dev tools AND desktop apps.
 
-### What the script installs
+### What the script installs automatically
 
-| Tool | How | Why |
-|------|-----|-----|
-| Chocolatey | PowerShell installer | Package manager for Windows (like apt/brew) |
-| Git + Git LFS | `choco install` | Version control (your repos use LFS) |
-| ffmpeg | `choco install` | Audio/video processing |
-| yt-dlp | `choco install` | Video downloader |
-| Python + pip | `choco install` | Python dev |
-| NVM for Windows | `choco install` | Manages Node.js versions |
-| Node.js LTS | `nvm install lts` | JavaScript runtime (includes npm and npx) |
-| Yarn | `npm install -g yarn` | Package manager (aeroja, aether use it) |
-| VS Code extensions | `code --install-extension` | All 65 extensions from your current setup |
-| .gitconfig | File copy | Your git user/email, LFS, autocrlf |
+| Phase | What | How |
+|-------|------|-----|
+| 1 | Chocolatey | PowerShell installer |
+| 2 | Git, Git LFS, ffmpeg, yt-dlp | `choco install` |
+| 2 | Python + pip | `choco install` |
+| 2 | NVM for Windows + Node.js LTS | `choco install` + `nvm install lts` |
+| 2 | Yarn | `npm install -g yarn` |
+| 3 | Chrome, Firefox | `choco install` |
+| 3 | Blender, OBS, HandBrake, VLC, K-Lite Codec Pack | `choco install` |
+| 3 | Spotify | `choco install` |
+| 3 | VS Code, GitHub Desktop, Docker Desktop | `choco install` |
+| 3 | Obsidian, AutoHotkey, PowerToys, TreeSize Free | `choco install` |
+| 3 | Discord, Slack, Signal | `choco install` |
+| 3 | Adobe Creative Cloud, Figma, AnyDesk, 1Password | `choco install` |
+| 3 | Steam, Epic Games Launcher | `choco install` |
+| 3 | Jellyfin Media Player | `choco install` |
+| 3 | NVIDIA App | `choco install` |
+| 3 | WinRAR, Google Earth Pro, Toggl Track | `choco install` |
+| 4 | Macrium Reflect Free 8.0.7783 (pinned) | `choco install --version` |
+| 4 | LINE Desktop | `winget install` |
+| 5 | VS Code extensions (65) | `code --install-extension` |
+| 5 | .gitconfig | File copy from template |
 
 ### What it does NOT install (and why)
 
-- **Anaconda** — 20GB and none of your projects use conda envs. If you need it: `choco install anaconda3`
+- **Anaconda** — none of your projects use conda envs. If you need it later: `choco install anaconda3`
 - **pnpm** — no projects use it
-- **Desktop apps** — the script prints a list of download links at the end
+- **Proton Drive** — install manually if needed
+- **aescripts ZXP/UXP Installer** — manual download: https://aescripts.com/learn/zxp-installer/
+- **aescripts Manager** — manual download: https://aescripts.com/learn/aescripts-aeplugins-manager-app/
 
 ### Step 3: Restore your backups
 
-From your USB drive / cloud backup:
+From your backup drive (e.g. `K:\after reformatting\`):
 
 ```powershell
-# SSH keys
-Copy-Item -Recurse "D:\backup\.ssh" "$env:USERPROFILE\.ssh"
-
 # Claude settings
-Copy-Item -Recurse "D:\backup\.claude" "$env:USERPROFILE\.claude"
-Copy-Item "D:\backup\.claude.json" "$env:USERPROFILE\.claude.json"
+Copy-Item -Recurse "K:\after reformatting\.claude" "$env:USERPROFILE\.claude"
+Copy-Item "K:\after reformatting\.claude.json" "$env:USERPROFILE\.claude.json"
+
+# Git config (the script restores from gitconfig_template, but if you want
+# your exact backup instead):
+Copy-Item "K:\after reformatting\.gitconfig" "$env:USERPROFILE\.gitconfig"
 
 # AWS / Azure (if you use them)
-Copy-Item -Recurse "D:\backup\.aws" "$env:USERPROFILE\.aws"
-Copy-Item -Recurse "D:\backup\.azure" "$env:USERPROFILE\.azure"
+Copy-Item -Recurse "K:\after reformatting\.aws" "$env:USERPROFILE\.aws"
+Copy-Item -Recurse "K:\after reformatting\.azure" "$env:USERPROFILE\.azure"
+
+# VS Code settings (keybindings, settings, snippets)
+Copy-Item -Recurse "K:\after reformatting\users_appdata_roaming_code_users\*" "$env:APPDATA\Code\User\"
 ```
 
 ### Step 4: Restore Python/npm packages (optional)
 
 ```powershell
 # Python packages from your freeze file
-pip install -r D:\backup\python-packages.txt
+pip install -r "K:\after reformatting\python-packages.txt"
 
 # npm globals (read the file and install each one)
-Get-Content D:\backup\npm-globals.txt | ForEach-Object { npm install -g $_ }
+Get-Content "K:\after reformatting\npm-globals.txt" | ForEach-Object { npm install -g $_ }
 ```
 
 ### Step 5: Clone all repos + install dependencies
-
-One script handles everything — clones all your repos (including sakhalteam org repos into a `sakhalteam/` subfolder) and runs the right install command for each:
 
 ```powershell
 cd C:\Users\sakha\Code\reformat_helper
@@ -157,41 +182,24 @@ python clone_and_install.py
 
 This clones and installs deps for:
 
-| Repo | Manager | Deps |
-|------|---------|------|
-| sakhalteam/bird-bingo | npm | React, Vite, Tailwind |
-| sakhalteam/japanese-articles | npm | React, Vite, Tailwind, react-markdown |
-| sakhalteam/nikbeat | npm | React, Vite, Tailwind |
-| sakhalteam/sakhalteam.github.io | npm | React, Vite, Three.js |
-| adobe-scripts | — | (no deps) |
-| ae_expressions | — | (no deps) |
-| aeroja | yarn | React, Vite, Tailwind, Adobe CEP |
-| python_tools | — | (no deps) |
-| reformat_helper | — | (this repo) |
-| sakhaltai.github.io | npm | React, Vite, Tailwind |
+| Repo | Location | Manager | Deps |
+|------|----------|---------|------|
+| bird-bingo | `sakhalteam/` | npm | React, Vite, Tailwind |
+| japanese-articles | `sakhalteam/` | npm | React, Vite, Tailwind, react-markdown |
+| nikbeat | `sakhalteam/` | npm | React, Vite, Tailwind |
+| sakhalteam.github.io | `sakhalteam/` | npm | React, Vite, Three.js |
+| adobe-scripts | `Code/` | — | (no deps) |
+| ae_expressions | `Code/` | — | (no deps) |
+| aeroja | `Code/` | yarn | React, Vite, Tailwind, Adobe CEP |
+| python_tools | `Code/` | — | (no deps) |
+| reformat_helper | `Code/` | — | (this repo — already cloned) |
+| sakhaltai.github.io | `Code/` | npm | React, Vite, Tailwind |
 
-If you add new repos later, just edit the `REPOS` list in `clone_and_install.py`.
-
-### Step 6: Install desktop apps
-
-These need manual installers:
-
-- [VS Code](https://code.visualstudio.com) (install first so the script can add extensions)
-- [1Password](https://1password.com/downloads)
-- [Discord](https://discord.com/download)
-- [Figma](https://figma.com/downloads)
-- [Slack](https://slack.com/downloads/windows)
-- [Spotify](https://spotify.com/download)
-- [Docker Desktop](https://docker.com/products/docker-desktop)
-- [OBS Studio](https://obsproject.com) (+ input-overlay plugin)
-- [Signal](https://signal.org/download)
-- [Notion](https://notion.so/desktop)
-
-### Step 7: Fonts
+### Step 6: Fonts
 
 Restore from your Macrium backup image.
 
-### Step 8: Verify
+### Step 7: Verify
 
 ```powershell
 git --version
@@ -201,7 +209,15 @@ npm --version
 yarn --version
 ffmpeg -version
 yt-dlp --version
+blender --version
+code --version
 ```
+
+### Step 8: Ongoing maintenance
+
+- Run `choco upgrade all -y` periodically to update everything (Macrium Reflect is pinned and won't be touched)
+- Run `choco list` to see what's installed via Chocolatey
+- Your NVIDIA drivers will update via the NVIDIA App, not choco
 
 ---
 
@@ -210,7 +226,7 @@ yt-dlp --version
 | File | Purpose |
 |------|---------|
 | `pre_reformat_audit.py` | Run before reformatting — scans everything and generates a report |
-| `post_reformat_setup.py` | Run after reformatting (as admin) — installs dev toolchain |
+| `post_reformat_setup.py` | Run after reformatting (as admin) — installs dev toolchain + desktop apps |
 | `clone_and_install.py` | Clones all repos and installs their dependencies |
 | `vscode_extensions.txt` | Snapshot of your VS Code extensions |
 | `gitconfig_template` | Your .gitconfig to restore |

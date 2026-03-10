@@ -1,28 +1,15 @@
 r"""
 Post-reformat setup script for Nicholas Hartmann's dev machine.
 
-This script installs the core dev toolchain you need to get back to work
-after a Windows reformat. It's intentionally conservative — it installs
-only what your projects actually use, not a kitchen-sink of tools.
+This script installs the core dev toolchain AND desktop apps you need to
+get back to work after a Windows reformat. It's organized into phases:
 
-What it installs:
-  1. Chocolatey (Windows package manager — like apt/brew, lets you install
-     CLI tools with one command and keep them updated with `choco upgrade all`)
-  2. Git + Git LFS (via choco)
-  3. ffmpeg (via choco — no more manually downloading zip files)
-  4. yt-dlp (via choco)
-  5. Python (latest stable, via choco — includes pip)
-  6. NVM for Windows (manages multiple Node.js versions)
-  7. Node.js LTS (via nvm)
-  8. Yarn (via npm, after node is installed)
-  9. VS Code extensions (from vscode_extensions.txt)
-  10. .gitconfig restoration
-
-What it does NOT install (and why):
-  - Anaconda/Conda — you have it but none of your projects use conda envs.
-    If you need it later: `choco install anaconda3`
-  - pnpm — none of your projects use it
-  - Multiple Python versions — just need one; venvs handle isolation
+  Phase 1: Package managers (Chocolatey)
+  Phase 2: Dev toolchain (Git, Python, Node, etc.)
+  Phase 3: Desktop apps via Chocolatey (browsers, creative tools, etc.)
+  Phase 4: Special-case installs (pinned versions, manual downloads)
+  Phase 5: VS Code extensions + .gitconfig restoration
+  Phase 6: Manual steps checklist
 
 Requirements:
   - Run this from an ELEVATED (admin) PowerShell or Command Prompt
@@ -54,6 +41,7 @@ RED = "\033[91m"
 CYAN = "\033[96m"
 RESET = "\033[0m"
 BOLD = "\033[1m"
+DIM = "\033[2m"
 
 
 def is_admin():
@@ -82,6 +70,10 @@ def fail(msg):
     print(f"{RED}[X]{RESET} {msg}")
 
 
+def info(msg):
+    print(f"{DIM}    {msg}{RESET}")
+
+
 def run_cmd(cmd, shell=True, check=False):
     """Run a command and return (success, stdout)."""
     try:
@@ -101,39 +93,6 @@ def run_cmd(cmd, shell=True, check=False):
 def command_exists(name):
     """Check if a command is available on PATH."""
     return shutil.which(name) is not None
-
-
-# ---------------------------------------------------------------------------
-# Install steps
-# ---------------------------------------------------------------------------
-
-def install_chocolatey():
-    """Install Chocolatey package manager."""
-    if command_exists("choco"):
-        step("Chocolatey already installed.")
-        return True
-
-    banner("Installing Chocolatey")
-    print("  Chocolatey is a package manager for Windows. Think of it like")
-    print("  apt (Linux) or brew (Mac). It lets you install and update CLI")
-    print("  tools with commands like `choco install ffmpeg`.\n")
-
-    ps_cmd = (
-        "Set-ExecutionPolicy Bypass -Scope Process -Force; "
-        "[System.Net.ServicePointManager]::SecurityProtocol = "
-        "[System.Net.ServicePointManager]::SecurityProtocol -bor 3072; "
-        "iex ((New-Object System.Net.WebClient).DownloadString("
-        "'https://community.chocolatey.org/install.ps1'))"
-    )
-    ok, _ = run_cmd(["powershell", "-NoProfile", "-Command", ps_cmd], shell=False)
-    if ok:
-        step("Chocolatey installed successfully.")
-        # Refresh PATH so choco is available in this session
-        _refresh_path()
-        return True
-    else:
-        fail("Chocolatey installation failed. You may need to install it manually.")
-        return False
 
 
 def _refresh_path():
@@ -156,25 +115,60 @@ def _refresh_path():
         pass
 
 
-def install_choco_packages():
-    """Install core tools via Chocolatey."""
+# ---------------------------------------------------------------------------
+# Phase 1: Chocolatey
+# ---------------------------------------------------------------------------
+
+def install_chocolatey():
+    """Install Chocolatey package manager."""
+    if command_exists("choco"):
+        step("Chocolatey already installed.")
+        return True
+
+    banner("Phase 1 — Installing Chocolatey")
+    print("  Chocolatey is a package manager for Windows. Think of it like")
+    print("  apt (Linux) or brew (Mac). It lets you install and update CLI")
+    print("  tools with commands like `choco install ffmpeg`.\n")
+
+    ps_cmd = (
+        "Set-ExecutionPolicy Bypass -Scope Process -Force; "
+        "[System.Net.ServicePointManager]::SecurityProtocol = "
+        "[System.Net.ServicePointManager]::SecurityProtocol -bor 3072; "
+        "iex ((New-Object System.Net.WebClient).DownloadString("
+        "'https://community.chocolatey.org/install.ps1'))"
+    )
+    ok, _ = run_cmd(["powershell", "-NoProfile", "-Command", ps_cmd], shell=False)
+    if ok:
+        step("Chocolatey installed successfully.")
+        _refresh_path()
+        return True
+    else:
+        fail("Chocolatey installation failed. You may need to install it manually.")
+        return False
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: Dev toolchain
+# ---------------------------------------------------------------------------
+
+def install_dev_toolchain():
+    """Install core dev tools via Chocolatey."""
     packages = {
-        "git": "Git version control",
-        "git-lfs": "Git Large File Storage (your repos use this)",
-        "ffmpeg": "Audio/video processing (no more manual zip downloads!)",
-        "yt-dlp": "Video downloader",
+        "git":      "Git version control",
+        "git-lfs":  "Git Large File Storage (your repos use this)",
+        "ffmpeg":   "Audio/video processing",
+        "yt-dlp":   "Video downloader",
     }
 
-    banner("Installing core tools via Chocolatey")
+    banner("Phase 2 — Dev Toolchain via Chocolatey")
 
     for pkg, desc in packages.items():
         step(f"Installing {pkg} — {desc}")
         ok, out = run_cmd(f"choco install {pkg} -y --no-progress")
         if ok:
-            step(f"  {pkg} installed.")
+            step(f"  {pkg} ✓")
         else:
-            # choco returns success even if already installed, so this is a real error
-            warn(f"  {pkg} may have had issues. Check manually with: choco list {pkg}")
+            warn(f"  {pkg} may have had issues. Check: choco list {pkg}")
 
     _refresh_path()
 
@@ -212,7 +206,6 @@ def install_nvm_and_node():
             fail("NVM install failed. Install manually from https://github.com/coreybutler/nvm-windows")
             return False
 
-    # Install and use latest LTS node
     step("Installing Node.js LTS via NVM...")
     run_cmd("nvm install lts")
     run_cmd("nvm use lts")
@@ -222,7 +215,7 @@ def install_nvm_and_node():
         ok, ver = run_cmd("node --version")
         step(f"Node.js ready: {ver}")
     else:
-        warn("Node may need a shell restart. After restart, run: nvm install lts && nvm use lts")
+        warn("Node may need a shell restart. After restart: nvm install lts && nvm use lts")
 
     return True
 
@@ -244,13 +237,147 @@ def install_yarn():
     if ok:
         step("Yarn installed successfully.")
     else:
-        warn("Yarn install failed. After restart, run: npm install -g yarn")
+        warn("Yarn install failed. After restart: npm install -g yarn")
     return ok
 
 
+# ---------------------------------------------------------------------------
+# Phase 3: Desktop apps via Chocolatey
+# ---------------------------------------------------------------------------
+
+def install_desktop_apps():
+    """Install desktop applications via Chocolatey."""
+
+    # Each entry: (choco_package_id, display_name, extra_flags_or_None)
+    apps = [
+        # --- Browsers ---
+        ("googlechrome",           "Google Chrome",            None),
+        ("firefox",                "Firefox",                  None),
+
+        # --- Creative / Media ---
+        ("blender",                "Blender",                  None),
+        ("obs-studio",             "OBS Studio",               None),
+        ("handbrake",              "HandBrake",                None),
+        ("vlc",                    "VLC Media Player",         None),
+        ("k-litecodecpackfull",    "K-Lite Codec Pack Full",   None),
+        ("spotify",                "Spotify",                  None),
+
+        # --- Dev / Productivity ---
+        ("vscode",                 "Visual Studio Code",       None),
+        ("github-desktop",         "GitHub Desktop",           None),
+        ("docker-desktop",         "Docker Desktop",           None),
+        ("obsidian",               "Obsidian",                 None),
+        ("autohotkey",             "AutoHotkey",               None),
+        ("powertoys",              "Microsoft PowerToys",      None),
+        ("treesizefree",           "TreeSize Free",            None),
+
+        # --- Communication ---
+        ("discord",                "Discord",                  None),
+        ("slack",                  "Slack",                    None),
+        ("signal",                 "Signal",                   None),
+
+        # --- Cloud / Remote ---
+        ("adobe-creative-cloud",   "Adobe Creative Cloud",     None),
+        ("figma",                  "Figma",                    None),
+        ("anydesk",                "AnyDesk",                  None),
+        ("1password",              "1Password",                None),
+
+        # --- Gaming ---
+        ("steam",                  "Steam",                    None),
+        ("epicgameslauncher",      "Epic Games Launcher",      None),
+
+        # --- Media / Streaming ---
+        ("jellyfin-media-player",  "Jellyfin Media Player",    None),
+
+        # --- GPU / Drivers ---
+        ("nvidia-app",             "NVIDIA App",               None),
+
+        # --- Utilities ---
+        ("winrar",                 "WinRAR",                   None),
+        ("google-earth-pro",       "Google Earth Pro",         None),
+        ("toggl",                  "Toggl Track",              None),
+    ]
+
+    banner("Phase 3 — Desktop Apps via Chocolatey")
+    print(f"  Installing {len(apps)} applications. This will take a while.\n")
+
+    succeeded = 0
+    failed_apps = []
+
+    for pkg, name, extra in apps:
+        step(f"Installing {name}...")
+        cmd = f"choco install {pkg} -y --no-progress"
+        if extra:
+            cmd += f" {extra}"
+        ok, _ = run_cmd(cmd)
+        if ok:
+            step(f"  {name} ✓")
+            succeeded += 1
+        else:
+            warn(f"  {name} — may need manual install or retry")
+            failed_apps.append((pkg, name))
+
+    _refresh_path()
+
+    print(f"\n  {GREEN}Installed: {succeeded}/{len(apps)}{RESET}")
+    if failed_apps:
+        print(f"  {YELLOW}Needs attention:{RESET}")
+        for pkg, name in failed_apps:
+            print(f"    - {name} (choco install {pkg} -y)")
+
+    return succeeded, failed_apps
+
+
+# ---------------------------------------------------------------------------
+# Phase 4: Special-case installs (pinned versions, manual downloads)
+# ---------------------------------------------------------------------------
+
+def install_special_cases():
+    """Handle installs that need version pinning or manual download."""
+
+    banner("Phase 4 — Special-Case Installs")
+
+    # --- Macrium Reflect Free 8.0.7783 (last free version) ---
+    step("Installing Macrium Reflect Free v8.0.7783 (pinned — last free version)...")
+    info("This is the last version before Macrium moved to paid-only.")
+    ok, _ = run_cmd("choco install reflect-free --version=8.0.7783 -y --no-progress")
+    if ok:
+        step("  Macrium Reflect Free 8.0.7783 ✓")
+        # Pin it so `choco upgrade all` doesn't overwrite it
+        run_cmd("choco pin add -n=reflect-free --version=8.0.7783")
+        step("  Pinned to 8.0.7783 — won't be upgraded by `choco upgrade all`")
+    else:
+        warn("  Macrium Reflect install failed. Manual install:")
+        warn("  https://download.macrium.com/reflect/v8/v8.0.7783/reflect_setup_free_x64.exe")
+
+    # --- LINE Desktop (not reliably on choco — use winget or manual) ---
+    step("Installing LINE Desktop...")
+    ok, _ = run_cmd("winget install --id LINE.LINE -e --silent --accept-source-agreements --accept-package-agreements")
+    if ok:
+        step("  LINE Desktop ✓ (via winget)")
+    else:
+        warn("  LINE Desktop — install manually: https://desktop.line-sms.com/")
+
+    # --- aescripts + aeplugins ZXP/UXP Installer ---
+    step("aescripts ZXP/UXP Installer — manual download required")
+    info("Download from: https://aescripts.com/learn/zxp-installer/")
+    info("Or direct MSI: https://updates.aescripts.com/")
+    info("(Also consider the aescripts Manager app for plugin management)")
+
+    # --- aescripts Manager/Updater app ---
+    step("aescripts Manager app — manual download required")
+    info("Download from: https://aescripts.com/learn/aescripts-aeplugins-manager-app/")
+
+    _refresh_path()
+
+
+# ---------------------------------------------------------------------------
+# Phase 5: VS Code extensions + .gitconfig
+# ---------------------------------------------------------------------------
+
 def install_vscode_extensions():
     """Install VS Code extensions from the saved list."""
-    banner("Installing VS Code Extensions")
+    banner("Phase 5 — VS Code Extensions")
 
     if not command_exists("code"):
         warn("VS Code CLI not found. Install VS Code first, then rerun this step.")
@@ -259,6 +386,8 @@ def install_vscode_extensions():
 
     if not EXTENSIONS_FILE.exists():
         warn(f"Extensions list not found at {EXTENSIONS_FILE}")
+        warn("To generate this file from your current setup, run:")
+        warn("  code --list-extensions > vscode_extensions.txt")
         return
 
     extensions = [
@@ -289,59 +418,71 @@ def restore_gitconfig():
 
     if not GITCONFIG_TEMPLATE.exists():
         warn(f"Template not found at {GITCONFIG_TEMPLATE}")
+        warn("To generate this file from your current setup, copy:")
+        warn(f"  copy %USERPROFILE%\\.gitconfig {GITCONFIG_TEMPLATE}")
         return
 
     shutil.copy2(GITCONFIG_TEMPLATE, target)
     step(f"Restored .gitconfig to {target}")
 
 
+# ---------------------------------------------------------------------------
+# Phase 6: Manual steps
+# ---------------------------------------------------------------------------
+
 def print_manual_steps():
     """Print things the user still needs to do manually."""
-    banner("Manual Steps Remaining")
+    banner("Phase 6 — Manual Steps Remaining")
 
     print(f"""  {BOLD}These can't be automated — do them when you're ready:{RESET}
 
-  {YELLOW}1. Restore SSH keys{RESET}
-     Copy your .ssh folder from your backup to C:\\Users\\sakha\\.ssh
-
-  {YELLOW}2. Restore Claude Code settings{RESET}
+  {YELLOW}1. Restore Claude Code settings{RESET}
      Copy your .claude folder from backup to C:\\Users\\sakha\\.claude
+     Copy .claude.json from backup to C:\\Users\\sakha\\.claude.json
 
-  {YELLOW}3. Install desktop apps{RESET}
-     These are easier to install via their own installers:
-     - VS Code:        https://code.visualstudio.com
-     - Discord:        https://discord.com
-     - Figma:          https://figma.com/downloads
-     - 1Password:      https://1password.com/downloads
-     - Slack:          https://slack.com/downloads
-     - Spotify:        https://spotify.com/download
-     - Docker Desktop: https://docker.com/products/docker-desktop
-     - OBS Studio:     https://obsproject.com  (+ input-overlay plugin)
+  {YELLOW}2. aescripts tools{RESET}
+     - ZXP/UXP Installer:  https://aescripts.com/learn/zxp-installer/
+     - aescripts Manager:  https://aescripts.com/learn/aescripts-aeplugins-manager-app/
+     Both are free downloads. The Manager handles plugin updates.
 
-  {YELLOW}4. Clone your repos{RESET}
-     cd C:\\Users\\sakha\\Code
-     git clone https://github.com/sakhaltai/aeroja.git
-     git clone https://github.com/sakhaltai/aether.git
-     git clone https://github.com/sakhaltai/sakhaltai.github.io.git
-     ... etc. (check your GitHub profile for the full list)
+  {YELLOW}3. Clone your repos{RESET}
+     python clone_and_install.py
+     (This clones all repos and installs their dependencies automatically.)
 
-  {YELLOW}5. Install project dependencies{RESET}
-     For each repo, run the appropriate install command:
-       yarn install   (aeroja, aether)
-       npm install    (sakhaltai.github.io)
-       pip install -r requirements.txt   (rodeo2024)
-
-  {YELLOW}6. Fonts{RESET}
+  {YELLOW}4. Fonts{RESET}
      Restore from your Macrium backup image.
 
-  {YELLOW}7. Verify everything{RESET}
-     - git --version
-     - python --version
-     - node --version && npm --version
-     - yarn --version
-     - ffmpeg -version
-     - yt-dlp --version
+  {YELLOW}5. VS Code settings{RESET}
+     Restore settings.json and keybindings.json from your backup to:
+     %APPDATA%\\Code\\User\\
+     Or check if Settings Sync is on: File > Preferences > Settings Sync
+
+  {YELLOW}6. Verify everything{RESET}
+     git --version
+     python --version
+     node --version && npm --version
+     yarn --version
+     ffmpeg -version
+     yt-dlp --version
+     blender --version
+     code --version
+
+  {YELLOW}7. Post-install tips{RESET}
+     - Run {BOLD}choco upgrade all -y{RESET} periodically to update everything
+       (Macrium Reflect is pinned and won't be touched)
+     - Run {BOLD}choco list{RESET} to see what's installed via Chocolatey
+     - Your NVIDIA drivers will update via the NVIDIA App, not choco
 """)
+
+
+# ---------------------------------------------------------------------------
+# CCCP note (for the person reading this script)
+# ---------------------------------------------------------------------------
+# CCCP (Combined Community Codec Pack) was last updated in October 2015 and
+# is effectively abandoned. K-Lite Codec Pack Full is the actively maintained
+# replacement and covers everything CCCP did plus modern codecs (AV1, VP9,
+# HEVC, etc.). That's why we install k-litecodecpackfull above instead.
+# ---------------------------------------------------------------------------
 
 
 # ---------------------------------------------------------------------------
@@ -359,17 +500,31 @@ def main():
 
     step("Running as Administrator — good to go.\n")
 
-    # Track what succeeded so we can give a summary
     results = {}
 
+    # Phase 1: Package manager
     results["Chocolatey"] = install_chocolatey()
-    if results["Chocolatey"]:
-        install_choco_packages()
-        results["Git + ffmpeg + yt-dlp"] = True
-        results["Python"] = install_python_via_choco()
 
+    if not results["Chocolatey"]:
+        fail("Can't continue without Chocolatey. Fix the install and rerun.")
+        sys.exit(1)
+
+    # Phase 2: Dev toolchain
+    install_dev_toolchain()
+    results["Git + ffmpeg + yt-dlp"] = True
+    results["Python"] = install_python_via_choco()
     results["NVM + Node.js"] = install_nvm_and_node()
     results["Yarn"] = install_yarn()
+
+    # Phase 3: Desktop apps
+    app_count, app_failures = install_desktop_apps()
+    results[f"Desktop Apps ({app_count} installed)"] = len(app_failures) == 0
+
+    # Phase 4: Special cases
+    install_special_cases()
+    results["Macrium Reflect 8.0.7783"] = True  # best-effort
+
+    # Phase 5: VS Code + gitconfig
     install_vscode_extensions()
     restore_gitconfig()
 
@@ -379,6 +534,7 @@ def main():
         status = f"{GREEN}OK{RESET}" if ok else f"{YELLOW}NEEDS ATTENTION{RESET}"
         print(f"  {item}: {status}")
 
+    # Phase 6: Manual steps
     print_manual_steps()
 
     step("Done! You may need to restart your terminal for PATH changes to take effect.")
